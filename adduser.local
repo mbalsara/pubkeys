@@ -1,0 +1,37 @@
+#!/bin/bash
+# install like this (from sudo):
+# apt-get update; apt-get install git-core; cp adduser.local /usr/local/sbin/adduser.local; chmod +x /usr/local/sbin/adduser.local
+
+# this only uses ADD_USER and ADD_HOME, others are aliased for expansion
+ADD_USER=$1
+ADD_UID=$2
+ADD_GID=$3
+ADD_HOME=$4
+
+# make sure these exist and can be written
+mkdir -p ${ADD_HOME}/.ssh
+chmod 777 ${ADD_HOME}/.ssh/
+touch ${ADD_HOME}/.ssh/authorized_keys
+chmod 777 ${ADD_HOME}/.ssh/authorized_keys
+
+tempfoo=`basename $0`
+TMPFILE=`mktemp -dq /tmp/${tempfoo}.XXXXXX`
+if [ $? -ne 0 ]; then
+       echo "Can't create temp dir, exiting..."
+       exit 1
+fi
+
+git clone --no-checkout --depth 1 git@github.com:reputation/pubkeys.git ${TMPDIR} > /dev/null 2>&1
+pushd ${TMPDIR}
+git show HEAD:${ADD_USER} >> ${ADD_HOME}/.ssh/authorized_keys
+popd
+rm -rf ${TMPDIR}
+
+# lock these back down
+chmod 600 ${ADD_HOME}/.ssh/authorized_keys
+chmod 700 ${ADD_HOME}/.ssh
+
+# for debugging
+#echo "Added content to pubkey file, check this to see if it looks right:"
+#cat ${ADD_HOME}/.ssh/authorized_keys
+
